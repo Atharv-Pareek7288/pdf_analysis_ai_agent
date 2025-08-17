@@ -25,7 +25,7 @@ if user_input:
                 result+=chunk.text
         st.write(result)
 text = ""
-
+#added the pdf uploading system inside the chatbox... just like the chatgpt 
 if user_input and user_input.files:
     uploaded_file = user_input.files[0]
     dov = fitz.open(stream=uploaded_file.read(), filetype="pdf")
