@@ -1,32 +1,35 @@
 import streamlit as st
 import os
 import fitz
-import google.generativeai as genai
 from dotenv import load_dotenv
+from google import genai
 
 load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEYS"))
-model  = genai.GenerativeModel("gemini-1.5-flash-002")
+api_key=os.getenv("GEMINI_API_KEYS")
+client = genai.Client(api_key=api_key)
 
-st.title("Studify")
-st.text("your study buddy here to help you... just upload your study material and lets conquer the exams!")
-uploaded_file = st.file_uploader("Upload your PDF", type="PDF")
+user_input = st.chat_input("Your Message", accept_file = True, file_type = ["pdf"])
 
+if user_input:
+    st.chat_message("user").write(user_input.text)
+
+    response = client.models.generate_content_stream(
+    model = "gemini-2.5-flash",
+    contents =user_input.text
+)
+
+    with st.chat_message("assistant"):
+        result=""
+        for chunk in response:
+            if chunk.text:
+                result+=chunk.text
+        st.write(result)
 text = ""
 
-if uploaded_file is not None:
-    doc = fitz.open(stream=uploaded_file.read(), filetype="pdf")
-    for page in doc:
+if user_input and user_input.files:
+    uploaded_file = user_input.files[0]
+    dov = fitz.open(stream=uploaded_file.read(), filetype="pdf")
+    for page in dov:
         out = page.get_text()
         text += out
-
-prompt = f"""
-think of yourself as a great explainer about the topic which the user will give... summarize the given text in a detailed manner
-ask 5 follow up questions from the user about the topic of text he has uplaoded and the questions must be highly relevent, think of yourself as the teacher so that you undertand what topics are import for the exmas 
-and explain the in the best way possible 
-{text}
-"""
-
-response = model.generate_content(prompt)
-
-st.write(response.text)
+st.chat_message("assistant").write(text)
