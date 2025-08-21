@@ -3,6 +3,7 @@ import os
 import fitz
 from dotenv import load_dotenv
 from google import genai
+from google.genai import types
 import time
 
 load_dotenv()
@@ -10,6 +11,9 @@ api_key=os.getenv("GEMINI_API_KEYS")
 client = genai.Client(api_key=api_key)
 st.title("EchoLens")
 user_input = st.chat_input("Your Message", accept_file = True, file_type = ["pdf"])
+
+if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
 
 if user_input:
 
@@ -20,13 +24,11 @@ if user_input:
         text = ""
         doc = fitz.open(stream=uploaded_file.read(), filetype="pdf")
         for page in doc:
-            out = page.get_text()
-            text += out
+            text += page.get_text()
 
         response = client.models.generate_content_stream(
-            model= "gemini-2.5-flash",
-            contents = f"summarize the give text in such a way that it covers all the important topics ... {text}"
-
+            model="gemini-2.5-flash",
+            contents=[types.Content(role="user", parts=[types.Part(text=f"summarize the given text... {text}")])]
         )
 
         with st.chat_message("assistant"):
@@ -40,12 +42,15 @@ if user_input:
             
     elif user_input.text:
         st.chat_message("user").write(user_input.text)
+        user_msg = user_input.text
+        st.session_state.chat_history.append(types.Content(role="user",parts=[types.Part(text=user_msg)]))
+        context_window = st.session_state.chat_history[-10:]
 
         response = client.models.generate_content_stream(
         model = "gemini-2.5-flash",
-        contents =[user_input.text]
+        contents =context_window
     )
-
+        
         with st.chat_message("assistant"):
             placeholder=st.empty()
             result=""
@@ -55,4 +60,12 @@ if user_input:
                     placeholder.markdown(result)
                     time.sleep(0.02)
 
+        st.session_state.chat_history.append(
+            types.Content(role="model", parts=[types.Part(text=result)])
+        )
 
+    
+
+
+st.sidebar.write("Chat History", st.session_state.chat_history)
+    
