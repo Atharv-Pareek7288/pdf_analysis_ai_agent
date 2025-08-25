@@ -15,6 +15,14 @@ user_input = st.chat_input("Your Message", accept_file = True, file_type = ["pdf
 if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
+
+for msg in st.session_state.chat_history:
+    with st.chat_message(msg.role):
+        for part in msg.parts:
+            if part.text:
+                st.markdown(part.text)
+
+
 if user_input:
 
     if user_input.files:
@@ -48,6 +56,18 @@ if user_input:
 
         response = client.models.generate_content_stream(
         model = "gemini-2.5-flash",
+        config=types.GenerateContentConfig(
+        system_instruction="""You are an AI Tutor specialized in the NCERT curriculum. Teach clearly, concisely, and accurately.
+
+Rules:
+- Keep answers short and precise. Provide the minimum detail that ensures understanding.
+- Expand only when the user explicitly asks for a deeper explanation.
+- Avoid spoonfeeding: prefer hints, guided questions, short exercises, and checkpoints that make the learner think. Example: instead of giving the full solution, ask "Which law applies here? Try writing the first equation; I’ll check it."
+- Encourage curiosity: finish some replies with a 1-line prompt like "Want a quick practice question or the step-by-step solution?"
+- For complex topics: give a 2-4 step breakdown and one simple analogy or example.
+- Always rely on NCERT materials (or retrieved source content) as primary evidence; if unsure, say so and offer to fetch sources.
+- Tone: friendly, encouraging, and Socratic when appropriate.
+"""),
         contents =context_window
     )
         
@@ -65,6 +85,9 @@ if user_input:
         )
 
 
-
-st.sidebar.write("Chat History", st.session_state.chat_history)                
+st.sidebar.write("### Chat History")
+for msg in st.session_state.chat_history:
+    role = "👤 User" if msg.role == "user" else "🤖 AI"
+    parts = " ".join([p.text for p in msg.parts if p.text])
+    st.sidebar.write(f"**{role}:** {parts}")               
     
