@@ -7,9 +7,9 @@ from google.genai import types
 import time
 
 load_dotenv()
-api_key=os.getenv("GEMINI_API_KEYS")
+api_key=os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
-st.title("EchoLens")
+st.title("Pragya AI")
 user_input = st.chat_input("Your Message", accept_file = True, file_type = ["pdf"])
 
 if "chat_history" not in st.session_state:
@@ -64,8 +64,7 @@ if user_input:
             types.Content(role="model", parts=[types.Part(text=result)])
         )
 
-    
 
 
-st.sidebar.write("Chat History", st.session_state.chat_history)
+st.sidebar.write("Chat History", st.session_state.chat_history)                
     
